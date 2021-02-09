@@ -88,7 +88,7 @@ LangevinMH <- function(init,dTar,dProp,rProp,nsamples=10000){
   
 }
 
-splottrace <- function(eta){
+plottrace <- function(eta){
   t2 <- ggplot(data.frame(x=seq(nrow(eta)),y=eta[,1]))+
     geom_path(aes(x=x,y=y)) + 
     labs(x="Index",y="")
