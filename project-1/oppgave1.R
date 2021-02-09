@@ -53,7 +53,7 @@ plotdensity <- function(f){
   x = as.matrix(expand.grid(seq(-5,5,0.1),seq(-5,5,0.1)))
   y = numeric(nrow(x))
   for (i in seq(nrow(x))){
-    y[i] = f(x[i,])
+    y[i] = f(x[i,],log=FALSE)
   }
   ggplot(data.frame(x = x[,1],y=x[,2],z=y))  + 
     geom_contour_filled(aes(x=x,y=y,z=z))
