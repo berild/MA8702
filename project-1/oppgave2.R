@@ -12,9 +12,9 @@ pump_data <- list(N = 10,
 fit <- stan(
   file = "pump.stan",  # Stan program
   data = pump_data,    # named list of data
-  chains = 1,             # number of Markov chains
+  chains = 4,             # number of Markov chains
   warmup = 1000,          # number of warmup iterations per chain
-  iter = 2000,            # total number of iterations per chain
+  iter = 3000,            # total number of iterations per chain
   refresh = 1000,         # show progress every 1000 iterations
   seed = 123
 )
@@ -22,26 +22,36 @@ fit <- stan(
 res <- as.data.frame(fit)
 res = res[,-ncol(res)]
 
-res = cbind(steps = seq(nrow(res)),res)
-
+stan_trace(fit,pars = colnames(res),ncol = 3,inc_warmup = TRUE)
+stan_ess(fit,pars = colnames(res))
+stan_mcse(fit,pars = colnames(res))
+stan_plot(fit,point_est = "median",pars = colnames(res),show_density = TRUE,fill_color="lightskyblue2",outline_color="dodgerblue3",est_color = "firebrick")
 
 effectiveSize(res)
-res
+sapply(seq(ncol(res)), function(x){sd(res[,x])})
+sapply(seq(ncol(res)), function(x){mean(res[,x])})
+sapply(seq(ncol(res)), function(x){median(res[,x])})
+
+getmode <- function(v) {
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+
+sapply(seq(ncol(res)), function(x){getmode(res[,x])})
+
 df = reshape2::melt(res ,  id.vars = 'steps', variable.name = 'vars')
 ggplot(df, aes(steps,value)) + geom_line() + facet_grid(vars ~ .,scales = "free")
-ggplot(df, aes(x = value, y=..density..)) + geom_histogram() + facet_wrap(vars ~ .,scales = "free")
+ggplot(df, aes(x = value, y=..density..)) + geom_histogram(color="dodgerblue4",fill="lightskyblue",bins = 30) + geom_density(color = "firebrick",size = 1) + facet_wrap(vars ~ .,scales = "free",ncol=3) +theme_bw()
 
-bacdf <- map_df(res, function(ts) as.vector(acf(ts, plot = FALSE)$acf))
-
-# The lags are all the same just 0 through the number of rows minus 1
+bacdf <- map_df(res, function(ts) as.vector(acf(ts, lag.max = 10,plot = FALSE)$acf))
 
 bacdf$lag <- 0:(nrow(bacdf) - 1)
 
-# reorder things and eliminate `Date` and unclean AAPL which is actually identical to AAPL
+significance_level <- qnorm((1 + 0.95)/2)/sqrt(nrow(res))
 
-bacdf <- bacdf %>% select(lag, everything(), -steps)
+bacdf <- bacdf %>% select(lag, everything())
 
 bacdf = reshape2::melt(bacdf ,  id.vars = 'lag', variable.name = 'vars')
 
-ggplot(bacdf, aes(lag,value)) + geom_segment(mapping = aes(xend = lag, yend = 0)) + geom_point() +facet_grid(vars ~ .,scales = "free") + theme_minimal()
+ggplot(bacdf, aes(lag,value)) + geom_segment(mapping = aes(xend = lag, yend = 0)) + geom_point() + geom_hline(yintercept = c(significance_level, -significance_level), lty = 3, color = "blue") + labs(x="Lag",y = "ACF") + facet_wrap(vars ~ .,scales = "fixed",ncol = 3) + theme_bw()
 
