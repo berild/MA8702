@@ -25,7 +25,7 @@ res = res[,-ncol(res)]
 stan_trace(fit,pars = colnames(res),ncol = 3,inc_warmup = TRUE)
 stan_ess(fit,pars = colnames(res))
 stan_mcse(fit,pars = colnames(res))
-stan_plot(fit,point_est = "median",pars = colnames(res),show_density = TRUE,fill_color="lightskyblue2",outline_color="dodgerblue3",est_color = "firebrick")
+stan_plot(fit,point_est = "mean",pars = colnames(res),show_density = TRUE,fill_color="lightskyblue2",outline_color="dodgerblue3",est_color = "firebrick")
 
 effectiveSize(res)
 sapply(seq(ncol(res)), function(x){sd(res[,x])})
@@ -38,7 +38,7 @@ getmode <- function(v) {
 }
 
 sapply(seq(ncol(res)), function(x){getmode(res[,x])})
-
+res = data.frame(steps = seq(nrow(res)), res)
 df = reshape2::melt(res ,  id.vars = 'steps', variable.name = 'vars')
 ggplot(df, aes(steps,value)) + geom_line() + facet_grid(vars ~ .,scales = "free")
 ggplot(df, aes(x = value, y=..density..)) + geom_histogram(color="dodgerblue4",fill="lightskyblue",bins = 30) + geom_density(color = "firebrick",size = 1) + facet_wrap(vars ~ .,scales = "free",ncol=3) +theme_bw()
