@@ -24,12 +24,13 @@ matern_cov <- function(sigma_sq, phi, dist_matrix){
   return (Sigma)
 }
 
+# defining a function returning mean value at site (x_coord, y_coord) for a specific value alpha
 mean_value <- function(alpha, x_coord, y_coord){ # returns mu_j, where coord is the coordinate for j
   return (alpha*((x_coord-0.5)+(y_coord-0.5))) # mu_j = alpha*((s_j1-0.5)+(s_j2-0.5))
 }
 
 # parameters
-
+set.seed(10)
 N = 200 # number of random observation sites
 sigma_sq = 1 # sigma^2
 phi = 10 # phi
@@ -43,15 +44,14 @@ coords = cbind(x_coords, y_coords) # coordinates of the N random sites
 plot(x=coords[,1], y=coords[,2]) # plot of the random sites
 
 
-# Making covariance matrix:
+# Creating covariance matrix:
 
 dist_matrix = rdist(coords) # matrix containing distance between every pair of points
 Sigma = matern_cov(sigma_sq = sigma_sq, phi = phi, dist_matrix = dist_matrix) # defining Sigma through the Matérn covariance function
 
 # sampling x
 
-L = chol(Sigma) # L is the Cholesky decomposition of the covariance matrix Sigma
-L = t(L) # the matrix obtained from chol(Sigma) is upper triangular. We want a lower triangular L
+L = t(chol(Sigma)) # L is the Cholesky decomposition of the covariance matrix Sigma
 z = rnorm(N) # z ~ N(0,1)
 x = L%*%z # x ~ N(0, Sigma)
 
@@ -65,25 +65,31 @@ x = x+mu_vec # x ~ N(mu, Sigma)
 y = x+rnorm(n=N,sd=sqrt(tau_sq)) # y ~ N(mu, Sigma+tau*I_N)  
 y = as.vector(y)
 
-
+# plotting the random sites of the Gaussian field x
 df_x = data.frame(coords, x)
-ggplot(df_x)+geom_point(aes(x=coords[,1], y=coords[,2],color=x)) # plotting the Gaussian field x
+ggplot(df_x)+geom_point(aes(x=coords[,1], y=coords[,2],color=x))+coord_fixed(ratio = 1)+xlab("easting")+ylab("northing")
+dev.print(pdf, "x_21.pdf")
 
+# plotting the observations y
 df_y = data.frame(coords, y)
-ggplot(df_y)+geom_point(aes(x=coords[,1], y=coords[,2],color=y)) # plotting the observations y
-
+ggplot(df_y)+geom_point(aes(x=coords[,1], y=coords[,2],color=y))+coord_fixed(ratio = 1)+xlab("easting")+ylab("northing")
+dev.print(pdf, "y_21.pdf")
 
 
 
 # Task 2.2: Parameter estimation
 
+# defining matrices in regression model. Using same notation as in lecture notes
 C = Sigma+tau_sq*diag(N) # C = Sigma+tau^2* I_N
 Q = solve(C) # Q = C^(-1)
 
 X = coords[,1]+coords[,2]-rep(1,N) # X is vector where row j of X is s_j1+sj2-1
 
 
-C_deriv_sigma_sq <- function(phi, dist_matrix){ # returns the dC/d(sigma^2) between the two elements of x
+# creating the partial derivates of C
+
+# returns dC/d(sigma^2) between the elements in x
+C_deriv_sigma_sq <- function(phi, dist_matrix){ 
   rows = dim(dist_matrix)[1] # number of rows in distance matrix
   cols = dim(dist_matrix)[2] # number of columns in distance matrix
   C_sigma_sq = matrix(1, ncol=rows, nrow=cols) # dC/d(sigma^2) has same dimensions as distance matrix
@@ -95,8 +101,8 @@ C_deriv_sigma_sq <- function(phi, dist_matrix){ # returns the dC/d(sigma^2) betw
   return (C_sigma_sq)
 }
 
-
-C_deriv_phi <- function(sigma_sq, phi, dist_matrix){  # computes dC/d(phi)
+# returns dC/d(phi)
+C_deriv_phi <- function(sigma_sq, phi, dist_matrix){  
   rows = dim(dist_matrix)[1] # number of rows in distance matrix
   cols = dim(dist_matrix)[2] # number of columns in distance matrix
   C_phi= matrix(1, ncol=rows, nrow=cols) # dC/d(phi) has same dimensions as distance matrix
@@ -108,9 +114,8 @@ C_deriv_phi <- function(sigma_sq, phi, dist_matrix){  # computes dC/d(phi)
   return (C_phi)
 }
 
-
+# returns a vector containing the partial derivates of C, i.e. dC/d(sigma^2), dC/d(tau^2) and dC/d(phi)
 compute_C_partial_derivatives = function(theta_hat, dist_matrix){ # Computes dC/d(theta)
-  
   C_partial_sigma_sq = C_deriv_sigma_sq(theta_hat[3], dist_matrix) # dC/ d(sigma^2)
   C_partial_tau_sq = diag(N)  # dC/d(tau^2) = I_N
   C_partial_phi = C_deriv_phi(theta_hat[1], theta_hat[3], dist_matrix) # dC/d(phi)
@@ -118,7 +123,7 @@ compute_C_partial_derivatives = function(theta_hat, dist_matrix){ # Computes dC/
   return (C_partial)
 }
 
-
+# returns the score vector (dl/d(sigma^2), dl/d(tau^2), dl/d(phi))
 compute_score_vec = function(C_partial, Q, Z){ 
   score_vec = rep(0,3) # vector of length 3 containing the three partial derivatives of the log-likelihood
   for (i in c(1,2,3)){ # dl/d(theta_i) =(-1/2)*trace(Q*dC/d(theta_i))+(1/2)*Z^T*Q*dC/d(theta_i)*Q*Z     theta_i is either sigma^2, tau^2 or phi
@@ -127,7 +132,7 @@ compute_score_vec = function(C_partial, Q, Z){
   return (score_vec)
 }
 
-
+# returns the expected hessian E(d^2l/d(theta)^2)
 compute_hessian = function(C_partial, Q){ # computing hessian d^2 l/d(theta^2)
   hessian = matrix(data=NA, ncol=3, nrow=3) # 3x3 matrix containing the hessian of the log-likelihood
   for (i in c(1,2,3)){
@@ -191,6 +196,7 @@ while (rho > tol){ # stopping the iterations when rho is smaller than tol
   rho = abs(loglikelihood-prev_loglikelihood) # rho = | likelihood_(p+1)-likelihood_p|
   prev_loglikelihood = loglikelihood # the new likelihood is the old likelihood in next iteration
   
+  
   # Printing number of iterations, likelihood, theta_hat and beta_hat
   
   cat("Iterations:", iter,"\n")
@@ -237,9 +243,10 @@ kriging_mean = X_0*as.vector(beta_hat)+C_pred_measure%*%solve(C)%*%(y-X*as.vecto
 # plotting kriging mean
 
 df_kriging_mean = data.frame(grid, kriging_mean)
-ggplot(df_kriging_mean)+geom_point(aes(x=grid[,1], y=grid[,2], color=kriging_mean)) # plotting each kriging mean in each grid node
-ggplot(df_kriging_mean, aes(x=grid[,1], y=grid[,2], fill = kriging_mean)) + geom_tile() # plotting map
-
+ggplot(df_kriging_mean)+geom_point(aes(x=grid[,1], y=grid[,2], color=kriging_mean))+coord_fixed(ratio = 1)+xlab("easting")+ylab("northing")+scale_color_continuous("")
+dev.print(pdf, "krig_mean_23.pdf")
+ggplot(df_kriging_mean, aes(x=grid[,1], y=grid[,2], fill = kriging_mean)) + geom_tile()+coord_fixed(ratio = 1)+xlab("easting")+ylab("northing")+scale_fill_continuous("") # plotting map
+dev.print(pdf, "krig_mean_map_23.pdf")
 
 # comparing against x and y
 
@@ -255,8 +262,10 @@ ggplot(df_y)+geom_point(aes(x=coords[,1], y=coords[,2],color=y)) # plotting obse
 kriging_var = C_0-C_pred_measure%*%solve(C)%*%t(C_pred_measure) # Var(Y_0|Y) = C_0-C_{0,.}C^{-1}C_{0,.}^T
 diag_kriging_var = diag(kriging_var) # making a matrix containing diagonal elements of Var(Y_0|Y)
 
+# plotting the kriging variance
 df_kriging_var = data.frame(grid, diag_kriging_var)
-ggplot(df_kriging_var)+geom_point(aes(x=grid[,1], y=grid[,2], color=diag_kriging_var)) # plotting each kriging variance in each grid node
-ggplot(df_kriging_var, aes(x=grid[,1], y=grid[,2], fill = diag_kriging_var)) + geom_tile() # plotting the kriging variance as a map
-
+ggplot(df_kriging_var)+geom_point(aes(x=grid[,1], y=grid[,2], color=diag_kriging_var))+coord_fixed(ratio = 1)+xlab("easting")+ylab("northing")+scale_color_continuous("") # plotting each kriging variance in each grid node
+dev.print(pdf, "krig_var_23.pdf")
+ggplot(df_kriging_var, aes(x=grid[,1], y=grid[,2], fill = diag_kriging_var)) + geom_tile()+coord_fixed(ratio = 1)+xlab("easting")+ylab("northing")+scale_fill_continuous("") # plotting the kriging variance as a map
+dev.print(pdf, "krig_var_map_23.pdf")
 
