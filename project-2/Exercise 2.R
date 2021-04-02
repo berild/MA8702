@@ -260,12 +260,12 @@ ggplot(df_y)+geom_point(aes(x=coords[,1], y=coords[,2],color=y)) # plotting obse
 # computing variance matrix for prediction sites
 
 kriging_var = C_0-C_pred_measure%*%solve(C)%*%t(C_pred_measure) # Var(Y_0|Y) = C_0-C_{0,.}C^{-1}C_{0,.}^T
-diag_kriging_var = diag(kriging_var) # making a matrix containing diagonal elements of Var(Y_0|Y)
+diag_kriging_se = sqrt(diag(kriging_var)) # making a matrix containing diagonal elements of Var(Y_0|Y)
 
 # plotting the kriging variance
-df_kriging_var = data.frame(grid, diag_kriging_var)
-ggplot(df_kriging_var)+geom_point(aes(x=grid[,1], y=grid[,2], color=diag_kriging_var))+coord_fixed(ratio = 1)+xlab("easting")+ylab("northing")+scale_color_continuous("") # plotting each kriging variance in each grid node
-dev.print(pdf, "krig_var_23.pdf")
-ggplot(df_kriging_var, aes(x=grid[,1], y=grid[,2], fill = diag_kriging_var)) + geom_tile()+coord_fixed(ratio = 1)+xlab("easting")+ylab("northing")+scale_fill_continuous("") # plotting the kriging variance as a map
-dev.print(pdf, "krig_var_map_23.pdf")
+df_kriging_se = data.frame(grid, diag_kriging_se)
+ggplot(df_kriging_se)+geom_point(aes(x=grid[,1], y=grid[,2], color=diag_kriging_se))+coord_fixed(ratio = 1)+xlab("easting")+ylab("northing")+scale_color_continuous("") # plotting each kriging variance in each grid node
+dev.print(pdf, "krig_se_23.pdf")
+ggplot(df_kriging_se, aes(x=grid[,1], y=grid[,2], fill = diag_kriging_se)) + geom_tile()+coord_fixed(ratio = 1)+xlab("easting")+ylab("northing")+scale_fill_continuous("") # plotting the kriging variance as a map
+dev.print(pdf, "krig_se_map_23.pdf")
 
