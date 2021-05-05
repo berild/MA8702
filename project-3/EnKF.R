@@ -100,12 +100,43 @@ df_y_velocities = data.frame("y_vel_mean"= mean_vel_ensemble_t[2,],"y_lower"=low
 
 
 # plotting trajectory
-ggplot(df_positions)+geom_point(aes(x=x_mean, y=y_mean, color="mean"))+geom_point(aes(x=x_lower, y=y_lower, color="95 % confidence bounds"))+geom_point(aes(x=x_upper, y=y_upper))+coord_fixed(ratio = 1)+xlab("easting")+ylab("northing")+xlim(c(0,40))+ylim(c(0,40))+scale_color_manual(values=c("black","red"))+theme(legend.position = "bottom")+theme_bw()
+ggplot(df_positions)+
+  geom_point(aes(x=x_mean, y=y_mean, color="mean"))+
+  geom_point(aes(x=x_lower, y=y_lower, color="95 % confidence bounds"))+
+  geom_point(aes(x=x_upper, y=y_upper))+
+  coord_fixed(ratio = 1)+
+  labs(x = "easting", y = "northing", color = "")+
+  xlim(c(0,40))+
+  ylim(c(0,40))+
+  scale_color_manual(values=c("black","red"))+
+  theme_bw() +
+  theme(legend.position = "bottom")
+
 
 
  # plotting velocities
-x_vel = ggplot(df_x_velocities)+geom_point(aes(x=1:T_steps, y=x_vel_mean, color="mean"))+geom_point(aes(x=1:T_steps, y=x_lower, color="95 % confidence bounds"))+geom_point(aes(x=1:T_steps, y=x_upper))+coord_fixed(ratio = 1)+xlab("time")+ylab("velocity")+ylim(c(-5,25))+xlim(c(0,50))+scale_color_manual(values=c("black","red"))+theme_bw()
-y_vel = ggplot(df_y_velocities)+geom_point(aes(x=1:T_steps, y=y_vel_mean, color="mean"))+geom_point(aes(x=1:T_steps, y=y_lower, color="95 % confidence bounds"))+geom_point(aes(x=1:T_steps, y=y_upper))+coord_fixed(ratio = 0.85)+xlab("time")+ylab("velocity")+xlim(c(0,50))+ylim(c(-35,0))+scale_color_manual(values=c("black","red"))+theme_bw()
+x_vel = ggplot(df_x_velocities)+geom_point(aes(x=1:T_steps, y=x_vel_mean, color="mean"))+
+  geom_point(aes(x=1:T_steps, y=x_lower, color="95 % confidence bounds"))+
+  geom_point(aes(x=1:T_steps, y=x_upper))+
+  coord_fixed(ratio = 0.7)+
+  labs(x = "time", y = "velocity", color = "",title = "a")+
+  ylim(c(-5,25))+xlim(c(0,50))+
+  theme_bw() +
+  scale_color_manual(values=c("black","red")) + 
+  theme(plot.title = element_text(hjust = -0.02, vjust = 0,face="bold",size = 12), panel.background = element_blank())
+x_vel
 
-ggarrange(x_vel, y_vel, nrow=2)
+y_vel = ggplot(df_y_velocities)+
+  geom_point(aes(x=1:T_steps, y=y_vel_mean, color="mean"))+
+  geom_point(aes(x=1:T_steps, y=y_lower, color="95 % confidence bounds"))+
+  geom_point(aes(x=1:T_steps, y=y_upper))+
+  coord_fixed(ratio = 0.6)+
+  labs(x = "time", y = "velocity", color = "", title="b")+
+  xlim(c(0,50))+ylim(c(-35,0))+
+  theme_bw() +
+  scale_color_manual(values=c("black","red")) + 
+  theme(plot.title = element_text(hjust = -0.02, vjust = 0,face="bold",size = 12), panel.background = element_blank())
+y_vel
+
+ggarrange(x_vel, y_vel, nrow=2,common.legend = T, legend="bottom")
 
