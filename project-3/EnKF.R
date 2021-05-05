@@ -4,7 +4,7 @@ library(ggplot2)
 library(ggpubr)
 
 
-set.seed(10)
+set.seed(11)
 # Creating vectors, matrices and constants
 
 mu_1 = c(10, 30, 10, -10) # mean for initial state vector
@@ -81,7 +81,7 @@ EnKF = function(B, T_steps){
   return (list("mean_pos"=mean_pos_ensemble_t, "lower_pos"=lower_bound_pos_ensemble_t, "upper_pos"=upper_bound_pos_ensemble_t, "mean_vel"=mean_vel_t, "lower_vel"=lower_bound_vel_ensemble_t, "upper_vel"=upper_bound_vel_ensemble_t))
 }
 
-B = 1000
+B = 100
 EnKF_output = EnKF(B, T_steps) # running EnKF
 
 # storing the output
@@ -100,12 +100,12 @@ df_y_velocities = data.frame("y_vel_mean"= mean_vel_ensemble_t[2,],"y_lower"=low
 
 
 # plotting trajectory
-ggplot(df_positions)+geom_point(aes(x=x_mean, y=y_mean, color="mean"))+geom_point(aes(x=x_lower, y=y_lower, color="95 % confidence bounds"))+geom_point(aes(x=x_upper, y=y_upper))+coord_fixed(ratio = 1)+xlab("easting")+ylab("northing")+xlim(c(0,40))+ylim(c(0,40))+scale_color_manual(values=c("black","red"))+theme(legend.position = "bottom")
+ggplot(df_positions)+geom_point(aes(x=x_mean, y=y_mean, color="mean"))+geom_point(aes(x=x_lower, y=y_lower, color="95 % confidence bounds"))+geom_point(aes(x=x_upper, y=y_upper))+coord_fixed(ratio = 1)+xlab("easting")+ylab("northing")+xlim(c(0,40))+ylim(c(0,40))+scale_color_manual(values=c("black","red"))+theme(legend.position = "bottom")+theme_bw()
 
 
-# plotting velocities
-x_vel = ggplot(df_x_velocities)+geom_point(aes(x=1:T_steps, y=x_vel_mean, color="mean"))+geom_point(aes(x=1:T_steps, y=x_lower, color="95 % confidence bounds"))+geom_point(aes(x=1:T_steps, y=x_upper))+coord_fixed(ratio = 1)+xlab("time")+ylab("velocity")+ylim(c(0,25))+xlim(c(0,50))+scale_color_manual(values=c("black","red"))
-y_vel = ggplot(df_y_velocities)+geom_point(aes(x=1:T_steps, y=y_vel_mean, color="mean"))+geom_point(aes(x=1:T_steps, y=y_lower, color="95 % confidence bounds"))+geom_point(aes(x=1:T_steps, y=y_upper))+coord_fixed(ratio = 0.7)+xlab("time")+ylab("velocity")+xlim(c(0,50))+ylim(c(-35,0))+scale_color_manual(values=c("black","red"))
+ # plotting velocities
+x_vel = ggplot(df_x_velocities)+geom_point(aes(x=1:T_steps, y=x_vel_mean, color="mean"))+geom_point(aes(x=1:T_steps, y=x_lower, color="95 % confidence bounds"))+geom_point(aes(x=1:T_steps, y=x_upper))+coord_fixed(ratio = 1)+xlab("time")+ylab("velocity")+ylim(c(-5,25))+xlim(c(0,50))+scale_color_manual(values=c("black","red"))+theme_bw()
+y_vel = ggplot(df_y_velocities)+geom_point(aes(x=1:T_steps, y=y_vel_mean, color="mean"))+geom_point(aes(x=1:T_steps, y=y_lower, color="95 % confidence bounds"))+geom_point(aes(x=1:T_steps, y=y_upper))+coord_fixed(ratio = 0.85)+xlab("time")+ylab("velocity")+xlim(c(0,50))+ylim(c(-35,0))+scale_color_manual(values=c("black","red"))+theme_bw()
 
 ggarrange(x_vel, y_vel, nrow=2)
 
